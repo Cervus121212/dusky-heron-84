@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23d4a017'/%3E%3Ctext x='16' y='23' font-size='18' font-weight='bold' text-anchor='middle' fill='%23111'%3ECL%3C/text%3E%3C/svg%3E">
+<title>COSTA LUNA — Open-World Crime</title>
+<style>
+  html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #0b0e14; font-family: 'Segoe UI', system-ui, -apple-system, Arial, sans-serif; }
+  #app { position: fixed; inset: 0; }
+  canvas.webgl { display: block; width: 100%; height: 100%; }
+  .panel { position: absolute; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.8); user-select: none; pointer-events: none; }
+  #topbar { top: 10px; left: 50%; transform: translateX(-50%); display: flex; gap: 18px; align-items: center; background: rgba(8,10,16,.55); border: 1px solid rgba(212,160,23,.55); border-radius: 8px; padding: 6px 16px; font-size: 15px; }
+  #stars { color: #ffd23e; letter-spacing: 2px; font-size: 19px; }
+  #cash { color: #7dff9a; font-weight: 700; }
+  #clock { color: #ffe9a8; }
+  #rep { color: #9fd8ff; font-size: 13px; }
+  #radio { top: 10px; right: 12px; text-align: right; background: rgba(8,10,16,.55); border: 1px solid rgba(255,255,255,.25); border-radius: 8px; padding: 6px 12px; }
+  #radio .st { font-weight: 700; color: #ffd23e; font-size: 14px; }
+  #radio .dj { font-size: 12px; color: #ddd; }
+  #mission { left: 12px; bottom: 12px; width: 330px; background: rgba(8,10,16,.62); border-left: 4px solid #d4a017; border-radius: 6px; padding: 10px 12px; }
+  #mission .ch { font-size: 11px; letter-spacing: 2px; color: #ffd23e; text-transform: uppercase; }
+  #mission .mt { font-size: 17px; font-weight: 700; margin: 2px 0; }
+  #mission .ob { font-size: 13px; color: #e8e8e8; }
+  #mission .nx { font-size: 12px; color: #9fd8ff; margin-top: 4px; }
+  #vitals { left: 50%; transform: translateX(-50%); bottom: 12px; width: 320px; }
+  .bar { height: 10px; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.35); border-radius: 5px; overflow: hidden; margin-top: 4px; }
+  .bar > div { height: 100%; }
+  #healthfill { background: linear-gradient(90deg, #37d67a, #7dff9a); width: 100%; }
+  #armourfill { background: linear-gradient(90deg, #3a76c4, #9fd8ff); width: 0%; }
+  #weapons { display: flex; gap: 8px; margin-top: 6px; justify-content: center; }
+  .slot { background: rgba(8,10,16,.6); border: 1px solid rgba(255,255,255,.3); border-radius: 5px; padding: 3px 9px; font-size: 12px; }
+  .slot.on { border-color: #ffd23e; color: #ffd23e; }
+  #minimap { right: 12px; bottom: 12px; border: 2px solid rgba(255,255,255,.55); border-radius: 6px; background: #2a2f36; }
+  #msg { top: 12%; left: 50%; transform: translateX(-50%); background: rgba(10,10,14,.78); border: 1px solid #d4a017; color: #fff; font-size: 14px; padding: 7px 16px; border-radius: 20px; display: none; white-space: nowrap; }
+  #dialog { left: 12px; bottom: 170px; width: 360px; display: none; background: rgba(8,10,16,.72); border: 1px solid rgba(255,255,255,.3); border-radius: 8px; padding: 10px 12px; }
+  #dialog .who { display: flex; align-items: center; gap: 10px; }
+  #dialog .face { width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, #d4a017, #7a4d12); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; color: #fff; }
+  #dialog .nm { font-weight: 700; color: #ffd23e; }
+  #dialog .tx { font-size: 13px; color: #eee; margin-top: 6px; line-height: 1.45; }
+  #dialog.shot-mission { bottom: 170px; }
+  #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at center, transparent 55%, rgba(200,0,0,.55) 100%); opacity: 0; transition: opacity .15s; }
+  #start { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #fff; text-align: center; background: linear-gradient(180deg, rgba(20,8,40,.25) 0%, rgba(255,122,26,.28) 55%, rgba(10,10,20,.82) 100%); z-index: 10; }
+  #start h1 { font-size: 64px; margin: 0; letter-spacing: 6px; color: #ffd23e; text-shadow: 0 3px 18px rgba(0,0,0,.9); }
+  #start h2 { font-size: 19px; margin: 6px 0 18px; font-weight: 400; color: #ffe9a8; letter-spacing: 2px; }
+  #start p { max-width: 560px; font-size: 15px; line-height: 1.6; color: #f2f2f2; margin: 4px 0 16px; }
+  #start .ctl { font-size: 13px; color: #cfe3ff; background: rgba(0,0,0,.45); border-radius: 8px; padding: 10px 18px; line-height: 1.8; }
+  #startBtn { margin-top: 20px; pointer-events: auto; cursor: pointer; background: #d4a017; color: #111; border: none; font-size: 18px; font-weight: 700; letter-spacing: 2px; padding: 12px 34px; border-radius: 8px; }
+  #startBtn:hover { background: #ffd23e; }
+  #pause { position: absolute; inset: 0; display: none; align-items: center; justify-content: center; color: #fff; background: rgba(0,0,0,.55); z-index: 9; font-size: 26px; letter-spacing: 4px; }
+  #test-results { position: absolute; left: 8px; top: 8px; z-index: 5; color: #0f0; background: rgba(0,0,0,.7); font: 11px monospace; white-space: pre; display: none; max-width: 46vw; max-height: 90vh; overflow: auto; }
+  #fps { position: absolute; left: 8px; bottom: 8px; z-index: 5; color: #8f8; font: 11px monospace; display: none; }
+</style>
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.min.js" } }
+</script>
+</head>
+<body>
+<div id="app"></div>
+<div id="topbar" class="panel"><span id="stars">☆☆☆☆☆</span><span id="cash">$0</span><span id="clock">18:53</span><span id="rep">ROOKIE · 0 REP</span></div>
+<div id="radio" class="panel"><div class="st">COSTA 88</div><div class="dj">DJ Neon · Sunset Drive</div></div>
+<div id="mission" class="panel"><div class="ch">COSTA LUNA</div><div class="mt">Welcome to Costa Luna</div><div class="ob">Press ENTER or click START to begin.</div><div class="nx"></div></div>
+<div id="vitals" class="panel">
+  <div class="bar"><div id="healthfill"></div></div>
+  <div class="bar"><div id="armourfill"></div></div>
+  <div id="weapons"><span class="slot on" id="slot0">1 · PISTOL ∞</span><span class="slot" id="slot1">2 · SMG 120</span></div>
+</div>
+<canvas id="minimap" class="panel" width="190" height="190"></canvas>
+<div id="msg" class="panel"></div>
+<div id="dialog" class="panel"><div class="who"><div class="face" id="dlgface">L</div><div class="nm" id="dlgnm">Lena Cruz</div></div><div class="tx" id="dlgtx"></div></div>
+<div id="vignette"></div>
+<div id="pause">PAUSED — ESC TO RESUME</div>
+<div id="start">
+  <h1>COSTA LUNA</h1>
+  <h2>OPEN-WORLD CRIME · 8 STORY JOBS · LUNA PD DISPATCH · AIR ONE · RESPECT RANKS</h2>
+  <p>Rico Solano is out and the whole coast is open. Steal cars, outrun Luna PD, run eight
+  story jobs for fixer Lena Cruz — and stay alive when Det. Marlow puts the whole
+  department on you. Wanted 1–5 stars, roadblocks at 4, Air One above 3.</p>
+  <div class="ctl">WASD drive / walk &nbsp;·&nbsp; E enter car · interact &nbsp;·&nbsp; Mouse drag camera &nbsp;·&nbsp; Click shoot &nbsp;·&nbsp; 1/2 weapons &nbsp;·&nbsp; R radio &nbsp;·&nbsp; M mute &nbsp;·&nbsp; ESC pause</div>
+  <button id="startBtn">START ENGINE</button>
+</div>
+<pre id="test-results"></pre>
+<div id="fps"></div>
+<script type="module" src="./src/main.js"></script>
+</body>
+</html>
